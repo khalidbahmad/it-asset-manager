@@ -19,6 +19,14 @@ return new class extends Migration
             // Affectation flexible — un seul des trois obligatoire
             $table->foreignId('department_id')->nullable()->constrained('departments')->onDelete('set null');
             $table->foreignId('seat_id')->nullable()->constrained('seats')->onDelete('set null');
+            $table->foreignId('agence_id')
+                ->nullable()
+                ->constrained('agences')
+                ->nullOnDelete();
+
+            // migration assignments
+            $table->foreignId('assigned_by')->nullable()->constrained('users');
+            $table->string('assigned_to')->nullable();
 
             $table->timestamp('assigned_at');
             $table->timestamp('returned_at')->nullable();

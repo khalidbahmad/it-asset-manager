@@ -11,10 +11,16 @@ class Assignment extends Model
         'employee_id',
         'department_id',
         'seat_id',
+        'agence_id',
         'assigned_at',
         'returned_at',
         'status',
     ];
+
+    public function assignedBy()
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
 
     public function asset()
     {
@@ -34,5 +40,9 @@ class Assignment extends Model
     public function seat()
     {
         return $this->belongsTo(Seat::class);
+    }
+    public function agence()
+    {
+        return $this->belongsTo(Agence::class, 'agence_id', 'IDAgence');
     }
 }

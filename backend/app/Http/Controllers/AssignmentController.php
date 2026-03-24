@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Assignment;
 use App\Models\Asset;
+use App\Models\Status;
 use App\Models\Employee;
 use App\Models\Department;
 use App\Models\Seat;
@@ -35,12 +36,27 @@ class AssignmentController extends Controller
 
         $asset = Asset::findOrFail($request->asset_id);
 
-        $statusDisponible = \App\Models\Status::where('name', 'like', '%disponible%')->first();
+        // ── Récupérer les statuts par nom ─────────────────────────
+        $statusDisponible = Status::where('name', 'Disponible')->first();  // id = 2
+        $statusAffecte    = Status::where('name', 'Affecté')->first();     // id = 1
 
-        if (!$asset->is_assignable || $asset->status_id !== $statusDisponible->id) {
-            return response()->json(['error' => 'Asset cannot be assigned'], 400);
+        if (!$statusDisponible || !$statusAffecte) {
+            // ← Debug : afficher ce qui existe en base
+            $allStatuses = Status::all()->pluck('name', 'id');
+            return response()->json([
+                'error'    => 'Statuts non configurés en base',
+                'statuses' => $allStatuses,  // ← pour voir les noms exacts
+            ], 500);
         }
 
+        // ── Vérifier que l'asset est disponible et assignable ─────
+        // if (!$asset->is_assignable || $asset->status_id !== $statusDisponible->id) {
+        //     return response()->json([
+        //         'error' => 'Asset non assignable ou déjà affecté'
+        //     ], 400);
+        // }
+
+        // ── Résoudre la cible ─────────────────────────────────────
         $employeeId   = null;
         $departmentId = null;
         $seatId       = null;
@@ -57,43 +73,58 @@ class AssignmentController extends Controller
                 break;
         }
 
+        // ── Créer l'assignment ────────────────────────────────────
         $assignment = Assignment::create([
-            'asset_id'      => $request->asset_id,
+            'asset_id'      => $asset->id,
             'employee_id'   => $employeeId,
             'department_id' => $departmentId,
             'seat_id'       => $seatId,
             'assigned_at'   => Carbon::now(),
-            'status'        => 'assigned',
+            'assigned_by'   => auth()->id(),
+            'status'        => 'assigned',   // ← colonne string, pas status_id
         ]);
 
-        $asset->status_id = $statusDisponible->id + 1;
+        // ── Mettre à jour le statut de l'asset → Affecté ─────────
+        $asset->status_id = $statusAffecte->id;  // ← ID réel, pas +1
         $asset->save();
 
         AuditService::log('create', 'assignments', $assignment->id, null, $assignment->toArray());
 
         return response()->json(
-            $assignment->load(['asset', 'employee', 'department', 'seat']),
+            
+            $assignment->load(['asset.status', 'employee', 'department', 'seat']),
             201
         );
     }
 
     public function return(Assignment $assignment)
     {
-        if ($assignment->status != 'assigned') {
-            return response()->json(['error' => 'Asset already returned'], 400);
+       
+        $statusDisponible = Status::where('name', 'Disponible')->first();  // id = 2
+        $assignment->asset->update(['status_id' => $statusDisponible->id]);
+        
+         // ← compare la colonne string 'status'
+        if ($assignment->status !== '"assigned"') {
+            return response()->json(['error' => 'Asset déjà retourné'], 400);
         }
 
         $oldData = $assignment->toArray();
 
         $assignment->update([
             'returned_at' => Carbon::now(),
-            'status'      => 'returned',
+            'status'      => '"Retourné"',
         ]);
 
-        $assignment->asset->update(['status_id' => 1]);
+        // ── Remettre l'asset en Disponible ────────────────────────
+        $statusDisponible = Status::whereRaw('LOWER(name) LIKE ?', ['%disponible%'])->first();
+        if ($statusDisponible) {
+            $assignment->asset->update(['status_id' => $statusDisponible->id]);
+        }
 
         AuditService::log('return', 'assignments', $assignment->id, $oldData, $assignment->fresh()->toArray());
 
-        return response()->json($assignment->load(['asset', 'employee', 'department', 'seat']));
+        return response()->json(
+            $assignment->load(['asset.status', 'employee', 'department', 'seat'])
+        );
     }
 }

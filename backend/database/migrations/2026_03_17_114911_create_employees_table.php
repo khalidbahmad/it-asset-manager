@@ -33,7 +33,14 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('villes', function (Blueprint $table) {
+            $table->id();
+            $table->string('nom_ville', 120)->unique();
+            $table->timestamps();
+        });
     }
+
 
     /**
      * Reverse the migrations.
@@ -43,5 +50,6 @@ return new class extends Migration
         Schema::dropIfExists('employees');
         Schema::dropIfExists('departments');
         Schema::dropIfExists('seats');
+        Schema::dropIfExists('villes');
     }
 };

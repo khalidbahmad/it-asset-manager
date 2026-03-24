@@ -13,6 +13,8 @@ Route::post('SignUp', [UserController::class, 'store']);
 
 // Routes protégées (auth + roles)
 Route::middleware(['auth.token'])->group(function () {
+    // Route pour récupérer les données importantes 
+    Route::get('all-data', [\App\Http\Controllers\DataController::class, 'getData']);
 
     // Utilisateurs (Admin seulement)
     Route::middleware(['role:admin'])->group(function () {
@@ -20,22 +22,44 @@ Route::middleware(['auth.token'])->group(function () {
     });
 
     // Matériel / Assets (Admin + IT)
-    Route::middleware(['role:admin,it'])->group(function () {
+    Route::middleware(['role:admin,IT'])->group(function () {
         Route::apiResource('assets', AssetController::class);
     });
 
     // Affectations (Admin + IT)
-    Route::middleware(['role:admin,it'])->group(function () {
+    Route::middleware(['role:admin,IT'])->group(function () {
         Route::apiResource('assignments', AssignmentController::class);
         Route::post('assignments/{assignment}/return', [AssignmentController::class, 'return']);
     });
 
+    // create and assign asset in one step
+    Route::post('/assets/create-and-assign', [AssetController::class, 'createAndAssign']);
+
     // Mouvements / Transferts (Admin + IT)
-    Route::middleware(['role:admin,it'])->group(function () {
+    Route::middleware(['role:admin,IT'])->group(function () {
         Route::apiResource('movements', MovementController::class);
     });
 
     Route::get('audit-logs', [AuditLogController::class, 'index']);
     Route::get('audit-logs/{table}', [AuditLogController::class, 'byTable']);
     Route::get('audit-logs/{table}/{id}', [AuditLogController::class, 'byRecord']);
+
+    Route::post('categories', [\App\Http\Controllers\DataController::class, 'addCategory']);
+    Route::delete('categories/{id}', [\App\Http\Controllers\DataController::class, 'deleteCategory']);
+    Route::post('brands', [\App\Http\Controllers\DataController::class, 'addBrand']);
+    Route::delete('brands/{id}', [\App\Http\Controllers\DataController::class, 'deleteBrand']);
+    Route::post('locations', [\App\Http\Controllers\DataController::class, 'addLocation']);
+    Route::delete('locations/{id}', [\App\Http\Controllers\DataController::class, 'deleteLocation']);
+
+    Route::put('/profile',          [ProfileController::class, 'update']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/logout',          [AuthController::class,    'logout']);
+
+    Route::post('/employees/create', [\App\Http\Controllers\EmployeeController::class, 'createEmployee']);
+
+    Route::get('/agences', [\App\Http\Controllers\AgencesController::class, 'index']);
+    Route::get('/agences/{id}', [\App\Http\Controllers\AgencesController::class, 'show']);
+    Route::post('/agences', [\App\Http\Controllers\AgencesController::class, 'store']);
+    Route::delete('/agences/{id}', [\App\Http\Controllers\AgencesController::class, 'destroy']);
+    Route::post('/villes', [\App\Http\Controllers\DataController::class, 'addVille']);
 });

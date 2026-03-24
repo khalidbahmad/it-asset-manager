@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {

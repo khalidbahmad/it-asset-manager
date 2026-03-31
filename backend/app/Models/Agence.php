@@ -9,16 +9,17 @@ class Agence extends Model
     protected $table = 'agences';
 
     protected $fillable = [
-        'IDAgence',
         'Adresse',
         'Telephone',
-        'Agence'
+        'Agence',
+        'latitude',
+        'longitude',
     ];
 
     // Relation avec agences_info
     public function info()
     {
-        return $this->hasOne(AgenceInfo::class, 'IDAgence', 'IDAgence');
+        return $this->hasOne(AgenceInfo::class, 'IDAgence', 'id');
     }
 
     // Relation avec les assignments

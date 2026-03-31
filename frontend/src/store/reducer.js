@@ -82,10 +82,19 @@ function reducer(state= initialState, action){
                 users:       action.payload.users        ?? state.users,
                 employees:   action.payload.employees    ?? state.employees,
                 assignments: action.payload.assignments  ?? state.assignments,
+                villes:        action.payload.villes       ?? state.villes,
+                agences:       action.payload.agences      ?? state.agences,
             };
 
 
         /* EMPLOYEES */
+
+        case 'ADD_LOCATION':
+        if (!action.payload) return state;
+        return {
+            ...state,
+        locations: [...(state.agences ?? []), action.payload],
+    };
 
         case 'DELETE_EMPLOYEE': {
             const e = state.employees.find(x=>x.id===action.id);

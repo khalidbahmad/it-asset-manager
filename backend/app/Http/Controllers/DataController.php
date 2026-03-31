@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Ville;
 
 class DataController extends Controller
 {
@@ -89,5 +90,19 @@ class DataController extends Controller
         $location->delete();
 
         return response()->json(['message' => 'Location deleted']);
+    }
+
+    public function addVille(Request $request)
+    {
+        $validated = $request->validate([
+            'nom_ville' => 'required|string|max:120|unique:villes,nom_ville',
+        ]);
+
+        $ville = Ville::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $ville
+        ], 201);
     }
 }

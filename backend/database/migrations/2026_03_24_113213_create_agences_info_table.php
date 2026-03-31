@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('agences_info', function (Blueprint $table) {
             $table->id();
 
-            $table->integer('IDAgence')->unique(); // UNIQUE
+            // $table->unsignedBigInteger('IDAgence')->unique();
             $table->string('point_de_vente', 50)->nullable();
             $table->string('emetteur', 50)->nullable();
             $table->string('nom_ville', 120)->nullable();
@@ -24,8 +24,8 @@ return new class extends Migration
             $table->string('telephone_affiche', 50)->nullable();
             $table->string('etat_agence', 50)->nullable();
             $table->string('anydesk', 50)->nullable();
-            $table->string('Anydesk_2', 10)->nullable();
-            $table->string('Anydesk_3', 10)->nullable();
+            $table->string('Anydesk_2', 50)->nullable();
+            $table->string('Anydesk_3', 50)->nullable();
             $table->string('autres', 500)->nullable();
 
             $table->timestamp('last_update')->useCurrent()->useCurrentOnUpdate();
@@ -37,9 +37,9 @@ return new class extends Migration
             $table->index('ip_agence');
 
             // Foreign Key
-            $table->foreign('IDAgence')
-                ->references('IDAgence')
-                ->on('agences')
+            $table->foreignId('IDAgence')
+                ->unique()
+                ->constrained('agences')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
         });

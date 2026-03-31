@@ -80,7 +80,7 @@ class AssetController extends Controller
         'warranty_end_date'  => 'nullable|date',
         'is_assignable'      => 'required|boolean',
         // ── Affectation (obligatoire si statut = Affecté) ──────────
-        'assign_type'        => 'required_if:status,Affecté|nullable|in:employee,department,seat',
+        'assign_type'        => 'required_if:status,Affecté|nullable|in:employee,department,agence,seat',
         'assign_target_id'   => 'nullable|integer',
         'assign_target_name' => 'nullable|string',
         'assigned_by'        => 'nullable|integer|exists:users,id',
@@ -136,6 +136,7 @@ class AssetController extends Controller
             $employeeId   = null;
             $departmentId = null;
             $seatId       = null;
+            $agenceId     = null;
             $assignedTo   = $request->assigned_to;
 
             switch ($request->assign_type) {
@@ -165,13 +166,21 @@ class AssetController extends Controller
                     $seatId     = $seat->id;
                     $assignedTo = $assignedTo ?? $seat->name;
                     break;
+                case 'agence':
+                    $agence = $request->assign_target_id
+                        ? \App\Models\Agence::findOrFail($request->assign_target_id)
+                        : \App\Models\Agence::firstOrCreate(['nom_agence' => $request->assign_target_name]);
+                    $agenceId   = $agence->id;
+                    $assignedTo = $assignedTo ?? $agence->nom_agence;
+                    break;
             }
 
             $assignment = Assignment::create([
                 'asset_id'      => $asset->id,
                 'employee_id'   => $employeeId,
                 'department_id' => $departmentId,
-                'seat_id'       => $seatId,
+                'seat_id'       => $seatId  ,
+                'agence_id'     => $agenceId,
                 'assigned_at'   => Carbon::now(),
                 'assigned_by'   => auth()->id(),   // ← toujours l'user connecté
                 'assigned_to'   => $assignedTo,

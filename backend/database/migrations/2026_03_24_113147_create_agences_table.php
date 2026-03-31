@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('agences', function (Blueprint $table) {
             $table->id(); // ID AUTO_INCREMENT
-            $table->integer('IDAgence')->unique();
             $table->string('Adresse', 500);
             $table->text('Telephone');
             $table->string('Agence', 500);
+            $table->decimal('latitude',  10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->timestamps();
+            
         });
     }
 

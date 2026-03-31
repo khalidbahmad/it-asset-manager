@@ -8,6 +8,9 @@ class AgenceInfo extends Model
 {
     protected $table = 'agences_info';
 
+    // La table n'a pas created_at / updated_at
+    public $timestamps = false;
+
     protected $fillable = [
         'IDAgence',
         'point_de_vente',
@@ -28,6 +31,6 @@ class AgenceInfo extends Model
 
     public function agence()
     {
-        return $this->belongsTo(Agence::class, 'IDAgence', 'IDAgence');
+        return $this->belongsTo(Agence::class, 'IDAgence', 'id');
     }
 }

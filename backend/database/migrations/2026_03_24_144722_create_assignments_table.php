@@ -14,15 +14,12 @@ return new class extends Migration
         Schema::create('assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade');
-            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
+            $table->foreignId('employee_id')->nullable()->constrained('employees')->onDelete('cascade');
 
             // Affectation flexible — un seul des trois obligatoire
             $table->foreignId('department_id')->nullable()->constrained('departments')->onDelete('set null');
             $table->foreignId('seat_id')->nullable()->constrained('seats')->onDelete('set null');
-            $table->foreignId('agence_id')
-                ->nullable()
-                ->constrained('agences')
-                ->nullOnDelete();
+            $table->foreignId('agence_id')->nullable()->constrained('agences')->nullOnDelete();
 
             // migration assignments
             $table->foreignId('assigned_by')->nullable()->constrained('users');

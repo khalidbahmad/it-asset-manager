@@ -8,7 +8,7 @@ export function useData() {
     useEffect(() => {
         getAllData()
             .then(data => {
-                // console.log("Données chargées: " + JSON.stringify(data));
+                console.log("Données chargées: " + JSON.stringify(data));
                 dispatch({ type: 'SET_DATA', payload: data });
             })
             .catch(err => {
@@ -30,5 +30,7 @@ export function useData() {
         users:       state.users || [],
         employees:   state.users.filter(u => u.role === 'employee') || [],
         assignments: state.assignments || [],
+        villes:      state.villes || [],
+        agences:     state.agences || [],
     };
 }

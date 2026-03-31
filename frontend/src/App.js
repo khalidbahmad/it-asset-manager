@@ -9,14 +9,17 @@ import EmployeesPage from './pages/Employees';
 import MovementsPage from './pages/Movements';
 import AuditPage from './pages/AuditLogs';
 import AdminPage from './pages/AdminPanel';
+import AgentsPage from './pages/AgentsPage';
+import AgentsInfoPage from './pages/AgentsInfoPage';
 import ProfilePage from './pages/ProfilePage';
+import AddAgencePage from './pages/AddAgencePage';
 import { useState } from 'react';
 import { useData } from './hooks/useData';
 
 // ── Permissions par rôle ──────────────────────────────────────────────
 const ROLE_PERMISSIONS = {
     admin: {
-        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/admin', '/profile', '/agents','/agentsInfo'],
+        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/admin', '/profile', '/agents','/agentsInfo', '/agences/new'],
         label:    'Administrateur',
     },
     it: {
@@ -53,6 +56,7 @@ function AuthenticatedApp({ dark, setDark, auth }) {
             <Routes>
                 {/* ── Accessible à tous les rôles connectés ── */}
                 <Route path="/" element={<Dashboard />} />
+
                 <Route path="/profile" element={<ProfilePage />} />
 
                 {/* ── Assets : admin, it manager, technicien ── */}
@@ -80,6 +84,22 @@ function AuthenticatedApp({ dark, setDark, auth }) {
                     <Guard role={role} path="/admin" element={<AdminPage />} />
                 } />
 
+                {/* ── Agents : accessible à tous les rôles connectés ── */}
+                <Route path="/admin" element={
+                    <Guard role={role} path="/admin" element={<AdminPage />} />
+                } />
+
+                <Route path="/agents" element={
+                    <Guard role={role} path="/agents" element={<AgentsPage />} />
+                } />
+
+                <Route path="/agentsInfo/:id" element={
+                    <Guard role={role} path="/agentsInfo" element={<AgentsInfoPage />} />
+                } />
+
+                <Route path="/agences/new" element={
+                    <Guard role={role} path="/agences/new" element={<AddAgencePage />} />
+                } />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Layout>

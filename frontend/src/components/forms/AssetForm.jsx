@@ -64,6 +64,8 @@ function AssignModal({ asset, onClose }) {
     const employees   = state.employees   ?? [];
     const departments = state.departments ?? [];
     const seats       = state.seats       ?? [];
+    const agences     = state.agences     ?? [];
+    console.log("Agences disponibles:", agences);
 
     const [assignType,   setAssignType]   = useState('employee');
     const [assignTarget, setAssignTarget] = useState(null);
@@ -196,6 +198,19 @@ function AssignModal({ asset, onClose }) {
                             />
                         </div>
                     )}
+
+                    {/* {assignType === 'agence' && (
+                        <div className="form-group">
+                            <label>Agence *</label>
+                            <CreatableSelect
+                                options={agences}
+                                value={assignTarget}
+                                onChange={setAssignTarget}
+                                placeholder="Nouvelle agence..."
+                            />
+                        </div>
+                    )} */}
+
 
                     {/* ── Résumé affectation ── */}
                     {assignTarget && (

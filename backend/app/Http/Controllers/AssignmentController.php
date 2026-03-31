@@ -32,6 +32,7 @@ class AssignmentController extends Controller
             'employee_id'   => 'required_if:type,employee|exists:employees,id|nullable',
             'department_id' => 'required_if:type,department|exists:departments,id|nullable',
             'seat_id'       => 'required_if:type,seat|exists:seats,id|nullable',
+            'agence_id'     => 'required_if:type,agence|exists:agences,id|nullable'
         ]);
 
         $asset = Asset::findOrFail($request->asset_id);
@@ -71,6 +72,9 @@ class AssignmentController extends Controller
             case 'seat':
                 $seatId = $request->seat_id;
                 break;
+            case 'agence':
+                $agenceId = $request->agence_id;
+                break;
         }
 
         // ── Créer l'assignment ────────────────────────────────────
@@ -79,6 +83,7 @@ class AssignmentController extends Controller
             'employee_id'   => $employeeId,
             'department_id' => $departmentId,
             'seat_id'       => $seatId,
+            'agence_id'     => $agenceId,
             'assigned_at'   => Carbon::now(),
             'assigned_by'   => auth()->id(),
             'status'        => 'assigned',   // ← colonne string, pas status_id

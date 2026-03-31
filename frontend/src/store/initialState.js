@@ -49,6 +49,8 @@ const INIT = {
     locations: ['Casablanca - Siège', 'Rabat - Agence', 'Marrakech - Bureau', 'Fès - Agence', 'Data Center'],
     seats: ['Bureau 1', 'Bureau 2', 'Bureau 3', 'Bureau 4', 'Bureau 5'],
     actionLog: [],
+    villes: [],
+    agences: [] 
 };
 
 export default INIT;

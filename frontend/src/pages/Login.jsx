@@ -46,9 +46,9 @@ function LoginPage({ dark, setDark }) {
     if (!validate()) return;
 
     try {
-        console.log("Données envoyées au login: " + JSON.stringify({ email, password }));
+        // console.log("Données envoyées au login: " + JSON.stringify({ email, password }));
         const data = await login( email, password );
-        console.log("resultat du login: " + JSON.stringify(data));
+        // console.log("resultat du login: " + JSON.stringify(data));
         dispatch({ 
           type:  'LOGIN', 
           role:  data.user?.role ?? role,

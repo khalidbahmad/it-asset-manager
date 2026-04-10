@@ -174,6 +174,7 @@ function AssetsPage() {
                             </tr>
                         </thead>
                         <tbody>
+                            {/* {console.log(filtered)} */}
                             {filtered.map(a => (
                                 <tr key={a.id}>
 
@@ -259,7 +260,9 @@ function AssetsPage() {
                                                         📋 Affecter
                                                     </button>
                                                 )}
+                                                
                                                 {a.status === 'Affecté' && (
+                                                    
                                                     <button className="action-btn" onClick={() => returnAsset(a)}>
                                                         ↩️ Retourner
                                                     </button>
@@ -316,11 +319,19 @@ function AssetsPage() {
                                 </div>
                                 {canEdit && (
                                     <div className="asset-card-m-actions">
+                                        
                                         {a.status === 'Disponible' && (
                                             <button className="action-btn" onClick={() => setShowAssign(a)}>
                                                 Affecter
                                             </button>
                                         )}
+
+                                        {a.status === 'Retraité' && (
+                                            <button className="action-btn" onClick={() => setShowAssign(a)}>
+                                                Affecter
+                                            </button>
+                                        )}
+
                                         {a.status === 'Affecté' && (
                                             <button className="action-btn" onClick={() => returnAsset(a)}>
                                                 Retour

@@ -6,6 +6,11 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\MovementController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AgencesController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\FortigateController;
 
 // Auth public (login) 
 Route::post('SignIn', [UserController::class, 'login']);
@@ -21,16 +26,17 @@ Route::middleware(['auth.token'])->group(function () {
         Route::apiResource('users', UserController::class);
     });
 
+    // Affectations (Admin + IT)
+    Route::middleware(['role:admin,IT'])->group(function () {
+        Route::apiResource('assignments', AssignmentController::class);
+        Route::patch('assets/{assetId}/return', [AssignmentController::class, 'return']);
+    });
+
     // Matériel / Assets (Admin + IT)
     Route::middleware(['role:admin,IT'])->group(function () {
         Route::apiResource('assets', AssetController::class);
     });
 
-    // Affectations (Admin + IT)
-    Route::middleware(['role:admin,IT'])->group(function () {
-        Route::apiResource('assignments', AssignmentController::class);
-        Route::post('assignments/{assignment}/return', [AssignmentController::class, 'return']);
-    });
 
     // create and assign asset in one step
     Route::post('/assets/create-and-assign', [AssetController::class, 'createAndAssign']);
@@ -39,6 +45,8 @@ Route::middleware(['auth.token'])->group(function () {
     Route::middleware(['role:admin,IT'])->group(function () {
         Route::apiResource('movements', MovementController::class);
     });
+
+    Route::get('audit-logs/assets/{serial_number}', [AssetController::class, 'getAuditLogsBySerialNumber']);
 
     Route::get('audit-logs', [AuditLogController::class, 'index']);
     Route::get('audit-logs/{table}', [AuditLogController::class, 'byTable']);
@@ -62,4 +70,8 @@ Route::middleware(['auth.token'])->group(function () {
     Route::post('/agences', [\App\Http\Controllers\AgencesController::class, 'store']);
     Route::delete('/agences/{id}', [\App\Http\Controllers\AgencesController::class, 'destroy']);
     Route::post('/villes', [\App\Http\Controllers\DataController::class, 'addVille']);
+    // routes/api.php
+    Route::get('/agences/{id}/fortigate-config', 
+        [\App\Http\Controllers\FortigateController::class, 'generate']
+    )->middleware('auth.token');
 });

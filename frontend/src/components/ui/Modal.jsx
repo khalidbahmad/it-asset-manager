@@ -25,7 +25,7 @@ function CreatableSelect({ options = [], value, onChange, placeholder, labelKey 
         setCustom('');
         setAdding(false);
     }
-
+    
     if (adding) return (
         <div style={{ display: 'flex', gap: 6 }}>
             <input
@@ -38,12 +38,12 @@ function CreatableSelect({ options = [], value, onChange, placeholder, labelKey 
                 }}
                 placeholder={placeholder}
                 style={{ flex: 1 }}
-            />
+                />
             <button type="button" className="btn btn-primary"   style={{ padding: '0 10px' }} onClick={confirm}>✓</button>
             <button type="button" className="btn btn-secondary" style={{ padding: '0 10px' }} onClick={() => setAdding(false)}>✕</button>
         </div>
     );
-
+    
     const selectedId = typeof value === 'object' ? value?.id : value;
 
     return (
@@ -78,99 +78,125 @@ function AddAssetModal({ onClose, onSubmit }) {
         { id: 'En réparation', name: 'En réparation' },
         { id: 'Retraité',      name: 'Retraité'      },
     ];
-    const categories  = state.categories  ?? [];
-    const brands      = state.brands      ?? [];
-    const locations   = state.locations   ?? [];
-    // ← "stauses" dans le JSON Laravel, "statuses" dans le reducer — on accepte les deux
-    const statuses    = state.statuses    ?? state.stauses ?? [];
-    const departments = state.departments ?? [];
-    const employees   = state.employees   ?? [];
-    const seats       = state.seats       ?? [];
-    const agences     = state.agences     ?? [];
-    // console.log("Agences disponibles:", agences);
-    
-    const [f, setF] = useState({
-    asset_tag:         '',
-    serial_number:     '',
-    model:             '',
-    description:       '',
-    category:          categories[0] ?? null,
-    brand:             brands[0]     ?? null,
-    location:          locations[0]  ?? null,
-    status:            STATUSES_STATIC[0],   // ← { id: 'Disponible', name: 'Disponible' }
-    purchase_date:     '',
-    warranty_end_date: '',
-    is_assignable:     true,
-    assign_type:       'employee',
-    assign_target:     null,
-    assigned_by:       null,
-});
 
-    // ← comparaison insensible à la casse pour sécurité
-    // Doit être recalculé à chaque render depuis f.status
+    const brandCategory = state.brand_category ?? [];
+    const locations     = state.locations   ?? [];
+    const departments   = state.departments ?? [];
+    const employees     = state.employees   ?? [];
+    const seats         = state.seats       ?? [];
+    const agences       = state.agences     ?? [];
+
+    // ── Brands uniques depuis brand_category ──
+    const brandsFromBC = [...new Map(
+        brandCategory.map(bc => [bc.brand, { id: bc.brand, name: bc.brand }])
+    ).values()];
+
+    // ── Toutes les catégories depuis brand_category (sans doublons) ──
+    const allCategoriesOrBrand = [...new Map(
+        brandCategory.map(bc => [bc.category, { id: bc.category, name: bc.category }])
+    ).values()];
+
+    // ── Map brand → ses catégories ──
+    const allCategoriesByBrand = brandCategory.reduce((acc, bc) => {
+        if (!acc[bc.brand]) acc[bc.brand] = [];
+        if (!acc[bc.brand].some(c => c.id === bc.category)) {
+            acc[bc.brand].push({ id: bc.category, name: bc.category });
+        }
+        return acc;
+    }, {});
+
+    const getAllCategoriesByBrand = (brandName) => {
+        return allCategoriesByBrand[brandName] || [];
+    };
+
+    // ── State ──
+    const [f, setF] = useState({
+        asset_tag:         '',
+        serial_number:     '',
+        model:             '',
+        description:       '',
+        category:          null,
+        brand:             null,
+        location:          locations[0] ?? null,
+        status:            STATUSES_STATIC[0],
+        purchase_date:     '',
+        warranty_end_date: '',
+        is_assignable:     true,
+        assign_type:       'employee',
+        assign_target:     null,
+        assigned_by:       null,
+    });
+
+    // ── Catégories filtrées :
+    //    si brand choisie → catégories de cette brand
+    //    sinon → toutes les catégories depuis brand_category
+    const filteredCategories = f.brand
+        ? getAllCategoriesByBrand(f.brand.name)
+        : allCategoriesOrBrand;
+
+    // ── Quand brand change → reset catégorie ──
+    function onBrandChange(v) {
+        setF(prev => ({
+            ...prev,
+            brand:    v,
+            category: null,
+        }));
+    }
+
     const isAffecte = f.status?.name === 'Affecté' || f.status?.id === 'Affecté';
 
-async function handle(e) {
-    e.preventDefault();
+    async function handle(e) {
+        e.preventDefault();
 
-    // console.log("f.status:", f.status);
-    // console.log("isAffecte:", isAffecte);
-    // console.log("f.category:", f.category);
-    // console.log("f.brand:", f.brand);
-    // console.log("f.location:", f.location);
+        if (!f.category?.name) {
+            toast('error', '❌', 'Veuillez choisir une catégorie');
+            return;
+        }
+        if (!f.brand?.name) {
+            toast('error', '❌', 'Veuillez choisir une marque');
+            return;
+        }
+        if (!f.location?.name) {
+            toast('error', '❌', 'Veuillez choisir un site');
+            return;
+        }
+        if (!f.status?.name) {
+            toast('error', '❌', 'Veuillez choisir un statut');
+            return;
+        }
+        if (isAffecte && !f.assign_target) {
+            toast('error', '❌', "Veuillez choisir une cible d'affectation");
+            return;
+        }
 
-    // ── Validation champs obligatoires ────────────────────────────
-    if (!f.category?.name) {
-        toast('error', '❌', 'Veuillez choisir une catégorie');
-        return;
-    }
-    if (!f.brand?.name) {
-        toast('error', '❌', 'Veuillez choisir une marque');
-        return;
-    }
-    if (!f.location?.name) {
-        toast('error', '❌', 'Veuillez choisir un site');
-        return;
-    }
-    if (!f.status?.name) {
-        toast('error', '❌', 'Veuillez choisir un statut');
-        return;
-    }
-    if (isAffecte && !f.assign_target) {
-        toast('error', '❌', "Veuillez choisir une cible d'affectation");
-        return;
-    }
+        try {
+            const payload = {
+                asset_tag:         f.asset_tag,
+                serial_number:     f.serial_number,
+                model:             f.model,
+                description:       f.description,
+                category:          f.category?.name,
+                brand:             f.brand?.name,
+                location:          f.location?.name,
+                status:            f.status?.name ?? f.status?.id,
+                purchase_date:     f.purchase_date     || null,
+                warranty_end_date: f.warranty_end_date || null,
+                is_assignable:     f.is_assignable,
+                ...(isAffecte && f.assign_target ? {
+                    assign_type:        f.assign_type,
+                    assign_target_id:   f.assign_target._new ? null                 : f.assign_target.id,
+                    assign_target_name: f.assign_target._new ? f.assign_target.name : null,
+                    assigned_by:        currentUserId,
+                    assigned_to:        f.assign_target.name,
+                } : {}),
+            };
 
-    try {
-        const payload = {
-            asset_tag:         f.asset_tag,
-            serial_number:     f.serial_number,
-            model:             f.model,
-            description:       f.description,
-            category:          f.category?.name,
-            brand:             f.brand?.name,
-            location:          f.location?.name,
-            status:            f.status?.name ?? f.status?.id,
-            purchase_date:     f.purchase_date     || null,
-            warranty_end_date: f.warranty_end_date || null,
-            is_assignable:     f.is_assignable,
-            ...(isAffecte && f.assign_target ? {
-                assign_type:        f.assign_type,
-                assign_target_id:   f.assign_target._new ? null                  : f.assign_target.id,
-                assign_target_name: f.assign_target._new ? f.assign_target.name  : null,
-                assigned_by:        currentUserId,
-                assigned_to:        f.assign_target.name,
-            } : {}),
-        };
-
-        console.log(JSON.stringify(payload, null, 2));
-        await onSubmit(payload);
-        onClose();
-    } catch (err) {
-        // // console.error("Erreur:", err?.response?.data ?? err);
-        toast('error', '❌', err?.response?.data?.message ?? err?.response?.data?.error ?? "Erreur lors de l'ajout");
+            await onSubmit(payload);
+            onClose();
+        } catch (err) {
+            toast('error', '❌', err?.response?.data?.message ?? err?.response?.data?.error ?? "Erreur lors de l'ajout");
+        }
     }
-}
 
     return (
         <Modal title="➕ Ajouter un Matériel" onClose={onClose}>
@@ -195,12 +221,18 @@ async function handle(e) {
                             <input value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Laptop professionnel..." />
                         </div>
 
+                        {/* Marque — en premier pour filtrer les catégories */}
                         <div className="form-group">
-                            <label>Catégorie</label>
-                            <CreatableSelect options={categories} value={f.category} onChange={v => setF({ ...f, category: v })} placeholder="Nouvelle catégorie..." />
+                            <label>Marque</label>
+                            <CreatableSelect
+                                options={brandsFromBC}
+                                value={f.brand}
+                                onChange={onBrandChange}
+                                placeholder="Choisir une marque..."
+                            />
                         </div>
 
-                        {/* ← Statut = select simple, PAS CreatableSelect */}
+                        {/* Statut */}
                         <div className="form-group">
                             <label>Statut</label>
                             <select
@@ -216,10 +248,24 @@ async function handle(e) {
                             </select>
                         </div>
 
+                        {/* Catégorie — filtrée par brand, toutes si pas de brand */}
                         <div className="form-group">
-                            <label>Marque</label>
-                            <CreatableSelect options={brands} value={f.brand} onChange={v => setF({ ...f, brand: v })} placeholder="Nouvelle marque..." />
+                            <label>
+                                Catégorie
+                                {f.brand && (
+                                    <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6, fontFamily: 'Space Mono, monospace' }}>
+                                        filtrée par {f.brand.name}
+                                    </span>
+                                )}
+                            </label>
+                            <CreatableSelect
+                                options={filteredCategories}
+                                value={f.category}
+                                onChange={v => setF({ ...f, category: v })}
+                                placeholder={f.brand ? `Catégories de ${f.brand.name}...` : "Toutes les catégories..."}
+                            />
                         </div>
+
                         <div className="form-group">
                             <label>Site / Emplacement</label>
                             <CreatableSelect options={locations} value={f.location} onChange={v => setF({ ...f, location: v })} placeholder="Nouveau site..." />
@@ -239,7 +285,7 @@ async function handle(e) {
 
                     </div>
 
-                    {/* ── Section affectation ── */}
+                    {/* Section affectation */}
                     {isAffecte && (
                         <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                             <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
@@ -270,7 +316,7 @@ async function handle(e) {
                                         <CreatableSelect
                                             options={employees.map(e => ({
                                                 ...e,
-                                                name: `${e.first_name} ${e.last_name}`  // ← fusionner pour l'affichage
+                                                name: `${e.first_name} ${e.last_name}`
                                             }))}
                                             value={f.assign_target}
                                             onChange={v => setF({ ...f, assign_target: v })}
@@ -290,7 +336,6 @@ async function handle(e) {
                                         <CreatableSelect options={seats} value={f.assign_target} onChange={v => setF({ ...f, assign_target: v })} placeholder="Nouveau poste..." />
                                     </div>
                                 )}
-                                
                                 {f.assign_type === 'agence' && (
                                     <div className="form-group full">
                                         <label>Agence *</label>

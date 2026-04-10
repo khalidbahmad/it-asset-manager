@@ -106,8 +106,28 @@ class AssetController extends Controller
     DB::beginTransaction();
     try {
         // ── Résoudre ou créer les relations ───────────────────────
-        $category = Category::firstOrCreate(['name' => $request->category]);
-        $brand    = Brand::firstOrCreate(['name'    => $request->brand]);
+        $Brand_Category = DB::table('brand_category')
+            ->where('brand', $request->brand)
+            ->where('category', $request->category)
+            ->first();
+
+        if (!$Brand_Category) {
+            $bcId = DB::table('brand_category')->insertGetId([
+                'brand'    => $request->brand,
+                'category' => $request->category,
+            ]);
+            $Brand_Category = DB::table('brand_category')->find($bcId);
+        }
+
+        // ── Résoudre category depuis la table categories ──────────
+        // C'est cet ID qui va dans assets.category_id
+        $category = \App\Models\Category::firstOrCreate(['name' => $request->category]);
+
+        // ── Résoudre brand depuis la table brands ─────────────────
+        $brand    = \App\Models\Brand::firstOrCreate(
+            ['name' => $request->brand],
+            ['category_id' => $category->id]  
+        );
         $location = Location::firstOrCreate(['name' => $request->location]);
         $status   = Status::firstOrCreate(['name'   => $request->status]);
 
@@ -126,7 +146,7 @@ class AssetController extends Controller
             'is_assignable'    => $request->is_assignable,
         ]);
 
-        AuditService::log('create', 'assets', $asset->id, null, $asset->toArray());
+        AuditService::log('create', 'assets', $asset->id, null, $asset->toArray(), $asset->asset_tag, $asset->serial_number);
 
         // ── Affectation ───────────────────────────────────────────
         $assignment = null;
@@ -187,7 +207,7 @@ class AssetController extends Controller
                 'status'        => 'assigned',
             ]);
 
-            AuditService::log('create', 'assignments', $assignment->id, null, $assignment->toArray());
+            AuditService::log('create', 'assignments', $assignment->id, null, $assignment->toArray(), $asset->asset_tag, $asset->serial_number);
         }
 
         DB::commit();
@@ -246,17 +266,35 @@ class AssetController extends Controller
 
         $asset->save();
 
-        AuditService::log('update', 'assets', $asset->id, $oldData, $asset->fresh()->toArray());
+        AuditService::log('update', 'assets', $asset->id, $oldData, $asset->fresh()->toArray(), $asset->asset_tag, $asset->serial_number);
 
         return response()->json($asset->load(['category', 'brand', 'location', 'status']));
     }
 
     public function destroy(Asset $asset)
     {
-        AuditService::log('delete', 'assets', $asset->id, $asset->toArray(), null);
+        AuditService::log('delete', 'assets', $asset->id, $asset->toArray(), null, $asset->asset_tag, $asset->serial_number);
 
         $asset->delete();
 
         return response()->json(['message' => 'Asset deleted']);
+    }
+
+    public function getAuditLogsBySerialNumber($serial_number)
+    {
+        $asset = Asset::where('serial_number', $serial_number)
+            ->with(['category', 'brand', 'location', 'status'])
+            ->firstOrFail();
+
+        $logs = \App\Models\AuditLog::where('serial_number', $serial_number)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('serial_number');
+
+        return response()->json([
+            'asset' => $asset,
+            'logs'  => $logs,
+        ]);
     }
 }

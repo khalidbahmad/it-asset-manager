@@ -43,7 +43,7 @@ export default function AddAgencePage() {
             const res = await client.post('/agences', f);
             dispatch({ type: 'ADD_LOCATION', payload: res.data.agence });
             toast('success', '🏢', `${f.Agence} créée avec succès`);
-            navigate('/locations');   // ← retour à la liste des agences
+            navigate('/agents');   // ← retour à la liste des agences
         } catch (err) {
             console.error(err?.response?.data);
             toast('error', '❌', err?.response?.data?.message ?? 'Erreur création agence');

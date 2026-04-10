@@ -61,64 +61,65 @@ function CreatableSelect({ options = [], value, onChange, placeholder, labelKey 
 function AssignModal({ asset, onClose }) {
     const { state, dispatch, toast } = useStore();
 
-    const employees   = state.employees   ?? [];
-    const departments = state.departments ?? [];
-    const seats       = state.seats       ?? [];
+    const employees   = state.employees   ?? [];;
     const agences     = state.agences     ?? [];
-    console.log("Agences disponibles:", agences);
+    //  console.log("Agences disponibles:", agences);
 
     const [assignType,   setAssignType]   = useState('employee');
     const [assignTarget, setAssignTarget] = useState(null);
     const [loading,      setLoading]      = useState(false);
 
     async function handle(e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        if (!assignTarget) {
-            toast('error', '❌', 'Veuillez choisir une cible');
+    if (!assignTarget) {
+        toast('error', '❌', 'Veuillez choisir une cible');
+        return;
+    }
+
+    const payload = {
+        asset_id: asset.id,
+        type:     assignType,
+    };
+
+    if (assignType === 'employee') {
+        if (assignTarget._new) {
+            toast('error', '❌', 'Veuillez sélectionner un employé existant');
             return;
         }
+        payload.employee_id = assignTarget.id;
 
-        // ── Construire le payload selon le type ───────────────────
-        const payload = {
-            asset_id: asset.id,
-            type:     assignType,
-        };
+    } else if (assignType === 'agence') {
+        payload.agence_id = assignTarget.id;                          // ← ajouté
+        payload.assigned_to = assignTarget.Agence ?? assignTarget.name;  // ← ajouté
 
-        if (assignType === 'employee') {
-            if (assignTarget._new) {
-                // Créer l'employé d'abord si nouveau — optionnel selon ton API
-                toast('error', '❌', 'Veuillez sélectionner un employé existant');
-                return;
-            }
-            payload.employee_id = assignTarget.id;
-        } else if (assignType === 'department') {
-            payload.department_id = assignTarget._new ? null : assignTarget.id;
-        } else if (assignType === 'seat') {
-            payload.seat_id = assignTarget._new ? null : assignTarget.id;
-        }
+    } else if (assignType === 'department') {
+        payload.department_id = assignTarget._new ? null : assignTarget.id;
 
-        console.log("Payload assignment:", JSON.stringify(payload, null, 2));
-
-        setLoading(true);
-        try {
-            const res = await client.post('/assignments', payload);
-            console.log("Réponse API assignment:", res.data);
-            
-            dispatch({ type: 'ADD_ASSIGNMENT', payload: res.data });
-            dispatch({ type: 'ASSIGN_ASSET',   assetId: asset.id, assignment: res.data });
-            
-            const label = assignTarget.name 
-                ?? `${assignTarget.first_name} ${assignTarget.last_name}`;
-            toast('success', '📋', `${asset.tag} → ${label}`);
-            onClose();
-        } catch (err) {
-            console.error("Erreur assignment:", err?.response?.data ?? err);
-            toast('error', '❌', err?.response?.data?.message ?? 'Erreur affectation');
-        } finally {
-            setLoading(false);
-        }
+    } else if (assignType === 'seat') {
+        payload.seat_id = assignTarget._new ? null : assignTarget.id;
     }
+
+    setLoading(true);
+    console.log("Payload d'affectation:", payload);
+    try {
+        const res = await client.post('/assignments', payload);
+
+        dispatch({ type: 'ADD_ASSIGNMENT', payload: res.data });
+        dispatch({ type: 'ASSIGN_ASSET',   assetId: asset.id, assignment: res.data });
+
+        const label = assignTarget.Agence      // ← agence a Agence pas name
+            ?? assignTarget.name
+            ?? `${assignTarget.first_name} ${assignTarget.last_name}`;
+        toast('success', '📋', `${asset.tag} → ${label}`);
+        onClose();
+    } catch (err) {
+        console.error("Erreur assignment:", err?.response?.data ?? err);
+        toast('error', '❌', err?.response?.data?.message ?? 'Erreur affectation');
+    } finally {
+        setLoading(false);
+    }
+}
 
     return (
         <Modal title={`📋 Affecter — ${asset.tag}`} onClose={onClose}>
@@ -137,8 +138,7 @@ function AssignModal({ asset, onClose }) {
                         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                             {[
                                 { v: 'employee',   l: '👤 Employé'     },
-                                { v: 'department', l: '🏢 Département' },
-                                { v: 'seat',       l: '💺 Poste'       },
+                                { v: 'agence',     l: '📍Agence'     },
                             ].map(t => (
                                 <button
                                     key={t.v}
@@ -175,41 +175,26 @@ function AssignModal({ asset, onClose }) {
                         </div>
                     )}
 
-                    {assignType === 'department' && (
-                        <div className="form-group">
-                            <label>Département *</label>
-                            <CreatableSelect
-                                options={departments}
-                                value={assignTarget}
-                                onChange={setAssignTarget}
-                                placeholder="Nouveau département..."
-                            />
-                        </div>
-                    )}
-
-                    {assignType === 'seat' && (
-                        <div className="form-group">
-                            <label>Poste *</label>
-                            <CreatableSelect
-                                options={seats}
-                                value={assignTarget}
-                                onChange={setAssignTarget}
-                                placeholder="Nouveau poste..."
-                            />
-                        </div>
-                    )}
-
-                    {/* {assignType === 'agence' && (
+                   {assignType === 'agence' && (
                         <div className="form-group">
                             <label>Agence *</label>
-                            <CreatableSelect
-                                options={agences}
-                                value={assignTarget}
-                                onChange={setAssignTarget}
-                                placeholder="Nouvelle agence..."
-                            />
+                            <select
+                                required
+                                value={assignTarget?.id ?? ''}
+                                onChange={e => {
+                                    const found = agences.find(a => String(a.id) === e.target.value);
+                                    setAssignTarget(found ?? null);
+                                }}
+                            >
+                                <option value="">-- Choisir une agence --</option>
+                                {agences.map(agence => (
+                                    <option key={agence.id} value={agence.id}>
+                                        {agence.Agence} — {agence.Ville}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    )} */}
+                    )}
 
 
                     {/* ── Résumé affectation ── */}

@@ -50,7 +50,8 @@ const INIT = {
     seats: ['Bureau 1', 'Bureau 2', 'Bureau 3', 'Bureau 4', 'Bureau 5'],
     actionLog: [],
     villes: [],
-    agences: [] 
+    agences: [],
+    brand_category: []
 };
 
 export default INIT;

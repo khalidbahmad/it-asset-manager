@@ -79,9 +79,9 @@ async function handle(e) {
   if (!validate()) return; 
 
   try {
-    console.log("Données envoyées au signup: " + JSON.stringify(form));
+    // console.log("Données envoyées au signup: " + JSON.stringify(form));
     const data = await signUp(form);
-    console.log("resultat du signup: " + JSON.stringify(data));
+    // console.log("resultat du signup: " + JSON.stringify(data));
     dispatch({ 
           type:  'LOGIN', 
           role:  data.user?.role ?? form.role,

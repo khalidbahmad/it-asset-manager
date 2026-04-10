@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('brands', function (Blueprint $table) {
+        // Migration
+        Schema::create('brand_category', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->string('brand');
+            $table->string('category');
             $table->timestamps();
+            
+            $table->unique(['brand', 'category']); // pas de doublon exact
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('brands');
+        Schema::dropIfExists('brand_category');
     }
 };

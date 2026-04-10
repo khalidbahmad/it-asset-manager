@@ -12,7 +12,9 @@ class AuditService
         string $tableName,
         int $recordId,
         array $oldData = null,
-        array $newData = null
+        array $newData = null,
+        string $assetTag = null,
+        string $serialNumber = null
     ) {
         AuditLog::create([
             'user_id'    => Auth::id(),
@@ -21,6 +23,18 @@ class AuditService
             'record_id'  => $recordId,
             'old_data'   => $oldData,
             'new_data'   => $newData,
+            'asset_tag'  => $assetTag,
+            'serial_number' => $serialNumber,
+
         ]);
+    }
+
+    public static function getLogsForModel(string $tableName, int $recordId)
+    {
+        return AuditLog::where('table_name', $tableName)
+            ->where('record_id', $recordId)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 }

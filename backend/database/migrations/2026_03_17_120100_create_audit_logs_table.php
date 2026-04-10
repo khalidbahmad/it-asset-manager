@@ -19,6 +19,8 @@ return new class extends Migration
             $table->bigInteger('record_id');
             $table->json('old_data')->nullable();
             $table->json('new_data')->nullable();
+            $table->string('asset_tag')->nullable();
+            $table->string('serial_number')->nullable();
             $table->timestamps();
         });
     }

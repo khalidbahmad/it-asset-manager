@@ -12,4 +12,9 @@ class Category extends Model
     {
         return $this->hasMany(Asset::class);
     }
+    // Category.php
+    public function brands()
+    {
+        return $this->hasMany(Brand::class);
+    }
 }

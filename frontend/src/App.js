@@ -13,17 +13,18 @@ import AgentsPage from './pages/AgentsPage';
 import AgentsInfoPage from './pages/AgentsInfoPage';
 import ProfilePage from './pages/ProfilePage';
 import AddAgencePage from './pages/AddAgencePage';
+import AssetHistoryPage from './pages/AssetHistoryPage';
 import { useState } from 'react';
 import { useData } from './hooks/useData';
 
 // ── Permissions par rôle ──────────────────────────────────────────────
 const ROLE_PERMISSIONS = {
     admin: {
-        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/admin', '/profile', '/agents','/agentsInfo', '/agences/new'],
+        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/admin', '/profile', '/agents','/agentsInfo', '/agences/new', '/assets/:serial/history'],
         label:    'Administrateur',
     },
     it: {
-        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/profile'],
+        routes:   ['/', '/assets', '/employees', '/movements', '/audit', '/profile', '/agents','/agentsInfo', '/agences/new', '/assets/:serial/history'],
         label:    'IT Manager',
     },
     technician: {
@@ -100,7 +101,13 @@ function AuthenticatedApp({ dark, setDark, auth }) {
                 <Route path="/agences/new" element={
                     <Guard role={role} path="/agences/new" element={<AddAgencePage />} />
                 } />
+
+                <Route path="/assets/:serial/history" element={
+                    <Guard role={role} path="/assets/:serial/history" element={<AssetHistoryPage />} />
+                } />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
         </Layout>
     );
@@ -109,7 +116,7 @@ function AuthenticatedApp({ dark, setDark, auth }) {
 export default function App() {
     const { state: { auth } } = useStore();
     const [dark, setDark] = useState(true);
-    console.log('Auth state:', auth);
+    // console.log('Auth state:', auth);
 
     if (!auth.loggedIn) {
         return (

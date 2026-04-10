@@ -7,7 +7,6 @@ const NAV_ITEMS = [
     { path: '/',          icon: '📊', label: 'Dashboard',  roles: ['admin', 'it', 'technician', 'employee'], badge: null },
     { path: '/assets',    icon: '💻', label: 'Matériels',  roles: ['admin', 'it', 'technician'], badge: 'maintenance' },
     { path: '/employees', icon: '👥', label: 'Employés',   roles: ['admin', 'it'],               badge: null },
-    { path: '/movements', icon: '🔄', label: 'Mouvements', roles: ['admin', 'it', 'technician'], badge: null },
     { path: '/audit',     icon: '📜', label: 'Audit Logs', roles: ['admin', 'it'],               badge: null },
     { path: '/admin',     icon: '⚙️', label: 'Admin Panel',roles: ['admin'],                             badge: null },
     { path: '/agents',    icon: '🤖', label: 'Agents',     roles: ['admin'],                            badge: null } 

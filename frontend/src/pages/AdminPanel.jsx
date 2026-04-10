@@ -1,109 +1,52 @@
 import { useState } from "react";
 import { useStore } from "../store/StoreContext";
 import { StorePanel } from "../store/storeIntspectorPanel";
-import { addCategory, deleteCategory, addBrand, deleteBrand, addLocation, deleteLocation, addAgence, deleteAgence } from '../api/alldataApi';
-
-function AgenceModal({ isOpen, onClose, onSubmit }) {
-    const [f, setF] = useState({
-        IDAgence: '',
-        Adresse: '',
-        Telephone: '',
-        Agence: '',
-        point_de_vente: '',
-        emetteur: '',
-        nom_ville: '',
-        ville_id: '',
-        ip_agence: '',
-        type_agence: '',
-        telephone_affiche: '',
-        etat_agence: '',
-        anydesk: '',
-        Anydesk_2: '',
-        Anydesk_3: '',
-        autres: '',
-        type_agence_code: '',
-        etat_agence_code: '',
-        asset_id: ''
-    });
-
-    if (!isOpen) return null;
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await onSubmit(f);
-        onClose();
-    };
-
-    const handleChange = (k, v) => setF(prev => ({ ...prev, [k]: v }));
-
-    return (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="modal" style={{ maxWidth: 500 }}>
-                <div className="modal-header">
-                    <div className="modal-title">Ajouter une Agence</div>
-                    <button className="modal-close" onClick={onClose}>✕</button>
-                </div>
-                <form onSubmit={handleSubmit} className="modal-body" style={{ display: 'grid', gap: 8 }}>
-                    {Object.keys(f).map(key => (
-                        <div key={key} className="form-group">
-                            <label>{key.replace(/_/g, ' ')}</label>
-                            <input
-                                type={key.includes('id') ? 'number' : 'text'}
-                                value={f[key]}
-                                onChange={e => handleChange(key, e.target.value)}
-                                placeholder={key.replace(/_/g, ' ')}
-                            />
-                        </div>
-                    ))}
-                    <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>Annuler</button>
-                        <button type="submit" className="btn btn-primary">Ajouter</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-}
+import { addBrand, deleteBrand, addLocation, deleteLocation } from '../api/alldataApi';
 
 function AdminPage() {
     const { state, dispatch, toast } = useStore();
-    const [inputs, setInputs] = useState({ categories: '', brands: '', locations: '', roles: '', agences: '' });
-    const [isAgenceModal, setAgenceModal] = useState(false);
+
+    const [inputs, setInputs] = useState({
+        brand_category: { name: '', category_name: '' },
+        locations: ''
+    });
 
     const sections = [
-        { title: 'Catégories', key: 'categories', color: '#4f8ef7' },
-        { title: 'Marques',    key: 'brands',     color: '#38d9a9' },
-        { title: 'Sites',      key: 'locations',  color: '#f6a623' },
-        { title: 'Rôles',      key: 'roles',      color: '#a78bfa' },
-        { title: 'Agences',    key: 'agences',    color: '#e64980' }
+        { title: 'Brands', key: 'brand_category', color: '#38d9a9' },
+        { title: 'Sites',  key: 'locations',      color: '#f6a623' },
     ];
 
     const API = {
-        categories: { add: addCategory, del: deleteCategory },
-        brands:     { add: addBrand,    del: deleteBrand    },
-        locations:  { add: addLocation, del: deleteLocation },
-        agences:    { add: addAgence,   del: deleteAgence   },
+        brand_category: { add: addBrand,    del: deleteBrand    },
+        locations:      { add: addLocation, del: deleteLocation },
     };
 
-    const label  = (item) => typeof item === 'object' ? (item.name ?? '—') : item;
-    const itemId = (item, j, sectionKey) => typeof item === 'object' ? `${sectionKey}-${item.id}` : `${sectionKey}-${j}`;
+    const label  = (item, key) => {
+        if (key === 'brand_category') return item.brand ?? '—';
+        return typeof item === 'object' ? (item.name ?? '—') : item;
+    };
+    const itemId = (item, j, key) => typeof item === 'object' ? `${key}-${item.id}` : `${key}-${j}`;
 
     async function add(key) {
-        const v = inputs[key].trim();
-        if (!v) return;
         try {
-            if (key === 'agences') {
-                setAgenceModal(true); // Ouvre modal
-                return;
-            }
-            if (API[key]) {
-                const res = await API[key].add(v);
-                dispatch({ type: 'ADD_ADMIN_ITEM', listKey: key, payload: res.data });
+            let res, displayName;
+
+            if (key === 'brand_category') {
+                const { name, category_name } = inputs.brand_category;
+                if (!name.trim() || !category_name.trim()) return;
+                res = await API.brand_category.add({ name: name.trim(), category_name: category_name.trim() });
+                displayName = name.trim();
+                setInputs(p => ({ ...p, brand_category: { name: '', category_name: '' } }));
             } else {
-                dispatch({ type: 'ADD_ADMIN_ITEM', listKey: key, value: v });
+                const v = inputs[key].trim();
+                if (!v) return;
+                res = await API[key].add(v);
+                displayName = v;
+                setInputs(p => ({ ...p, [key]: '' }));
             }
-            toast('success', '✅', `"${v}" ajouté`);
-            setInputs(p => ({ ...p, [key]: '' }));
+
+            dispatch({ type: 'ADD_ADMIN_ITEM', listKey: key, payload: res.data });
+            toast('success', '✅', `"${displayName}" ajouté`);
         } catch (err) {
             toast('error', '❌', err?.response?.data?.message ?? 'Erreur ajout');
         }
@@ -113,21 +56,48 @@ function AdminPage() {
         try {
             if (API[key] && item.id) await API[key].del(item.id);
             dispatch({ type: 'DELETE_ADMIN_ITEM', listKey: key, value: item });
-            toast('info', '🗑️', `"${label(item)}" supprimé`);
+            toast('info', '🗑️', `"${label(item, key)}" supprimé`);
         } catch (err) {
             toast('error', '❌', err?.response?.data?.message ?? 'Erreur suppression');
         }
     }
 
-    const handleAgenceSubmit = async (data) => {
-        try {
-            const res = await addAgence(data); // API complète avec tous les champs
-            dispatch({ type: 'ADD_ADMIN_ITEM', listKey: 'agences', payload: res.data });
-            toast('success', '✅', `Agence "${data.Agence}" ajoutée`);
-        } catch (err) {
-            toast('error', '❌', err?.response?.data?.message ?? 'Erreur ajout agence');
+    function renderInputs(s) {
+        if (s.key === 'brand_category') {
+            return (
+                <div className="card-actions" style={{ gap: 5 }}>
+                    <input
+                        value={inputs.brand_category.name}
+                        onChange={e => setInputs(p => ({ ...p, brand_category: { ...p.brand_category, name: e.target.value } }))}
+                        onKeyDown={e => e.key === 'Enter' && add('brand_category')}
+                        placeholder="Marque..."
+                        style={{ padding: '4px 9px', fontSize: 11, width: 90, borderRadius: 6 }}
+                    />
+                    <input
+                        value={inputs.brand_category.category_name}
+                        onChange={e => setInputs(p => ({ ...p, brand_category: { ...p.brand_category, category_name: e.target.value } }))}
+                        onKeyDown={e => e.key === 'Enter' && add('brand_category')}
+                        placeholder="Catégorie..."
+                        style={{ padding: '4px 9px', fontSize: 11, width: 90, borderRadius: 6 }}
+                    />
+                    <button className="topbar-btn primary" style={{ padding: '4px 10px' }} onClick={() => add('brand_category')}>+</button>
+                </div>
+            );
         }
-    };
+
+        return (
+            <div className="card-actions" style={{ gap: 5 }}>
+                <input
+                    value={inputs[s.key]}
+                    onChange={e => setInputs(p => ({ ...p, [s.key]: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && add(s.key)}
+                    placeholder="Nouveau..."
+                    style={{ padding: '4px 9px', fontSize: 11, width: 110, borderRadius: 6 }}
+                />
+                <button className="topbar-btn primary" style={{ padding: '4px 10px' }} onClick={() => add(s.key)}>+</button>
+            </div>
+        );
+    }
 
     return (
         <div className="content">
@@ -142,16 +112,7 @@ function AdminPage() {
                                     ({(state[s.key] ?? []).length})
                                 </span>
                             </div>
-                            <div className="card-actions" style={{ gap: 5 }}>
-                                <input
-                                    value={inputs[s.key]}
-                                    onChange={e => setInputs(p => ({ ...p, [s.key]: e.target.value }))}
-                                    onKeyDown={e => e.key === 'Enter' && add(s.key)}
-                                    placeholder="Nouveau..."
-                                    style={{ padding: '4px 9px', fontSize: 11, width: 110, borderRadius: 6 }}
-                                />
-                                <button className="topbar-btn primary" style={{ padding: '4px 10px' }} onClick={() => add(s.key)}>+</button>
-                            </div>
+                            {renderInputs(s)}
                         </div>
 
                         <div style={{ padding: '6px 18px 10px' }}>
@@ -170,10 +131,39 @@ function AdminPage() {
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, display: 'inline-block', flexShrink: 0 }} />
-                                        <span style={{ fontSize: 13, color: 'var(--text2)' }}>{label(item)}</span>
-                                        {typeof item === 'object' && item.id && (
-                                            <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'Space Mono,monospace' }}>#{item.id}</span>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+
+                                        {s.key === 'brand_category' ? (
+                                            <>
+                                                {/* Brand */}
+                                                <span style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500 }}>
+                                                    {item.brand}
+                                                </span>
+                                                {/* Separator */}
+                                                <span style={{ fontSize: 11, color: 'var(--text3)' }}>›</span>
+                                                {/* Category badge */}
+                                                <span style={{
+                                                    fontSize: 10,
+                                                    color: '#38d9a9',
+                                                    background: 'rgba(56,217,169,0.1)',
+                                                    borderRadius: 4,
+                                                    padding: '1px 7px',
+                                                    fontFamily: 'Space Mono, monospace'
+                                                }}>
+                                                    {item.category}
+                                                </span>
+                                                {/* ID */}
+                                                <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'Space Mono,monospace' }}>
+                                                    #{item.id}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span style={{ fontSize: 13, color: 'var(--text2)' }}>{label(item, s.key)}</span>
+                                                {typeof item === 'object' && item.id && (
+                                                    <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'Space Mono,monospace' }}>#{item.id}</span>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                     <button className="action-btn danger" onClick={() => del(s.key, item)}>✕</button>
@@ -183,12 +173,6 @@ function AdminPage() {
                     </div>
                 ))}
             </div>
-
-            <AgenceModal
-                isOpen={isAgenceModal}
-                onClose={() => setAgenceModal(false)}
-                onSubmit={handleAgenceSubmit}
-            />
         </div>
     );
 }

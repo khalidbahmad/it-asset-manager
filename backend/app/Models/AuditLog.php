@@ -13,6 +13,8 @@ class AuditLog extends Model
         'record_id',
         'old_data',
         'new_data',
+        'asset_tag',
+        'serial_number',
     ];
 
     protected $casts = [

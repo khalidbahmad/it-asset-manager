@@ -9,7 +9,7 @@ export const addCategory    = (name) => client.post('/categories', { name });
 export const deleteCategory = (id)   => client.delete(`/categories/${id}`);
 
 // ── Brands ────────────────────────────────────────────────────────────
-export const addBrand    = (name) => client.post('/brands', { name });
+export const addBrand    = (data) => client.post('/brands', data);
 export const deleteBrand = (id)   => client.delete(`/brands/${id}`);
 
 // ── Locations ─────────────────────────────────────────────────────────

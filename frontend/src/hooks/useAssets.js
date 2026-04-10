@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useStore } from '../store/StoreContext';
 import { createAndAssignAsset, deleteAsset as apiDelete } from '../api/assets.api';
 import { returnAsset as apiReturn } from '../api/assignments.api';
+import { getAllData } from '../api/alldataApi';
 
 export function useAssets() {
     const { state, dispatch, toast } = useStore();
@@ -83,6 +84,7 @@ export function useAssets() {
     // console.log("Assets normalisés:", normalizedAssets);
 
     const addAsset = useCallback(async (payload) => {
+        console.log(payload);
         try {
             const res    = await createAndAssignAsset(payload);
             const asset      = res.data?.asset;
@@ -92,7 +94,16 @@ export function useAssets() {
                 toast('error', '❌', 'Réponse API invalide');
                 return;
             }
-            dispatch({ type: 'ADD_ASSET',      payload: asset });
+            getAllData()
+            .then(data => {
+                console.log("Données chargées: " + JSON.stringify(data));
+                dispatch({ type: 'SET_DATA', payload: data });
+            })
+            .catch(err => {
+                console.error(err);
+                toast('error', '❌', 'Erreur chargement données');
+            });
+
             if (assignment) {
                 dispatch({ type: 'ADD_ASSIGNMENT', payload: assignment });
             }
@@ -124,7 +135,7 @@ export function useAssets() {
                 toast('error', '❌', 'Aucune affectation active trouvée');
                 return;
             }
-            await apiReturn(asset.assignmentId);
+            await apiReturn(asset.id);
             dispatch({ type: 'RETURN_ASSET', assetId: asset.id, assignmentId: asset.assignmentId });
             toast('info', '↩️', 'Retourné au stock');
         } catch (err) {

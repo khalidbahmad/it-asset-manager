@@ -11,7 +11,8 @@ class DataController extends Controller
     public function getData()
     {
         $data = [
-            'brands'      => \App\Models\Brand::all(),
+            'brand_category' => \DB::table('brand_category')->get(),
+            'brands' => \App\Models\Brand::with('category')->get(),
             'categories'  => \App\Models\Category::all(),
             'assets'      => \App\Models\Asset::with(['category', 'brand', 'location', 'status'])->get(),
             'locations'   => \App\Models\Location::all(),
@@ -57,12 +58,26 @@ class DataController extends Controller
     public function addBrand(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|unique:brands,name',
+            'name'          => 'required|string',
+            'category_name' => 'required|string',
         ]);
 
-        $brand = \App\Models\Brand::create(['name' => $request->name]);
+        // Vérifie doublon
+        $exists = \DB::table('brand_category')
+            ->where('brand', $request->name)
+            ->where('category', $request->category_name)
+            ->exists();
 
-        return response()->json($brand, 201);
+        if ($exists) {
+            return response()->json(['message' => 'Cette combinaison existe déjà'], 422);
+        }
+
+        $id = \DB::table('brand_category')->insertGetId([
+            'brand'    => $request->name,
+            'category' => $request->category_name,
+        ]);
+
+        return response()->json(['id' => $id, 'brand' => $request->name, 'category' => $request->category_name], 201);
     }
 
     public function deleteBrand($id)

@@ -84,6 +84,8 @@ function reducer(state= initialState, action){
                 assignments: action.payload.assignments  ?? state.assignments,
                 villes:        action.payload.villes       ?? state.villes,
                 agences:       action.payload.agences      ?? state.agences,
+                brand_category: action.payload.brand_category ?? state.brand_category,
+
             };
 
 
@@ -93,7 +95,7 @@ function reducer(state= initialState, action){
         if (!action.payload) return state;
         return {
             ...state,
-        locations: [...(state.agences ?? []), action.payload],
+        agences: [...(state.agences ?? []), action.payload],
     };
 
         case 'DELETE_EMPLOYEE': {

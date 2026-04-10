@@ -40,7 +40,7 @@ export default function AgentsInfoPage() {
         { v: 'info',       l: '🏢 Informations'                                },
         { v: 'audit',      l: `📜 Audit (${audit_logs?.length ?? 0})`          },
     ];
-
+    console.log(data);
     return (
         <div className="content">
             <StorePanel />

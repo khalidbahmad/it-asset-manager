@@ -19,8 +19,8 @@ export function useData() {
 
     return { 
         assets:      state.assets, 
-        brands:      state.brands, 
-        categories:  state.categories, 
+        brands:      state.brand_category || [], 
+        categories:  state.brand_category| [], 
         locations:   state.locations, 
         departments: state.departments, 
         seats:       state.seats, 
@@ -32,5 +32,6 @@ export function useData() {
         assignments: state.assignments || [],
         villes:      state.villes || [],
         agences:     state.agences || [],
+        brand_category: state.brand_category || [],
     };
 }

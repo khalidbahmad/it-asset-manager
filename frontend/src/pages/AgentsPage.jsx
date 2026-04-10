@@ -5,11 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { Modal } from "../components/ui/Modal";
 import client from "../api/axiosClient";
 import { AddAgenceModal } from "../components/ui/AddAgenceModal";
+import {downloadFortigateConfig} from "../components/ui/downloadFortigateConfig";
 
 
 // ── Page Agences ──────────────────────────────────────────────────────
 export default function AgencesPage() {
-    const { state, dispatch } = useStore();
+    const { state, dispatch, toast } = useStore();
     const navigate = useNavigate();
 
     const locations = state.agences ?? [];
@@ -45,16 +46,15 @@ export default function AgencesPage() {
         return {
             ...loc,
             total:      locAssets.length,
-            disponible: locAssets.filter(a => ['Disponible','available'].includes(getStatus(a))).length,
+            etat_agence: locAssets.filter(a => [ 'Active', 'Inactive' ].includes(getStatus(a))).length,
             affecte:    locAssets.filter(a => ['Affecté','assigned'].includes(getStatus(a))).length,
             reparation: locAssets.filter(a => ['En réparation','maintenance'].includes(getStatus(a))).length,
         };
     }), [locations, assets, statuses]);
-
     const filtered = useMemo(() => {
         let list = agences.filter(a =>
             !search || a.name.toLowerCase().includes(search.toLowerCase())
-                    || (a.address ?? '').toLowerCase().includes(search.toLowerCase())
+            || (a.address ?? '').toLowerCase().includes(search.toLowerCase())
         );
         return [...list].sort((a, b) => {
             const av = String(a[sortKey] ?? '').toLowerCase();
@@ -62,7 +62,7 @@ export default function AgencesPage() {
             return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
         });
     }, [agences, search, sortKey, sortDir]);
-
+    
     function handleAgenceCreated(newAgence) {
         dispatch({ type: 'ADD_LOCATION', payload: newAgence });
     }
@@ -120,14 +120,16 @@ export default function AgencesPage() {
                                 <th style={thStyle('name')}      onClick={() => toggleSort('name')}>Agence <SortIcon col="name" /></th>
                                 <th style={thStyle('address')}   onClick={() => toggleSort('address')}>Adresse <SortIcon col="address" /></th>
                                 <th style={thStyle('total')}     onClick={() => toggleSort('total')}>Total <SortIcon col="total" /></th>
-                                <th style={thStyle('disponible')}onClick={() => toggleSort('disponible')}>Disponible <SortIcon col="disponible" /></th>
+                                <th style={thStyle('etat_agence')}onClick={() => toggleSort('etat_agence')}>État Agence <SortIcon col="etat_agence" /></th>
                                 <th style={thStyle('affecte')}   onClick={() => toggleSort('affecte')}>Affecté <SortIcon col="affecte" /></th>
                                 <th style={thStyle('reparation')}onClick={() => toggleSort('reparation')}>Réparation <SortIcon col="reparation" /></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {console.log(filtered)}
+                            {
+                            // console.log(filtered)
+                            }
                             {filtered.map(loc => (
                                 <tr key={loc.id}>
                                     <td>
@@ -155,9 +157,9 @@ export default function AgencesPage() {
                                         </span>
                                     </td>
                                     <td>
-                                        {loc.disponible > 0
-                                            ? <span className="tag available"><span className="tag-dot" />{loc.disponible}</span>
-                                            : <span style={{ color: 'var(--text3)' }}>—</span>}
+                                        
+                                        <span className="tag available"><span className="tag-dot" />{loc.info?.etat_agence}</span>
+                                            
                                     </td>
                                     <td>
                                         {loc.affecte > 0
@@ -172,6 +174,17 @@ export default function AgencesPage() {
                                     <td>
                                         <button className="action-btn" onClick={() => navigate(`/agentsInfo/${loc.id}`)}>
                                             Voir →
+                                        </button>
+                                        <button
+                                            className="action-btn"
+                                            title={loc.ip_agence ? 'Générer config FortiGate' : 'IP manquante — configurer dans les détails'}
+                                            style={{ opacity: loc.ip_agence ? 1 : 0.4 }}
+                                            
+                                            onClick={() => {
+                                                downloadFortigateConfig(loc.id, loc.Agence , toast);
+                                            }}
+                                        >
+                                            🔧 →
                                         </button>
                                     </td>
                                 </tr>
